@@ -1,0 +1,510 @@
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<style>
+    #map {
+        margin: 15px auto;
+        width: calc(100% - 30px) !important;
+        height: 600px;
+        border-radius: 20px;
+        border: 1px solid #ccc;
+        background: #f0f0f0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .filters-wrapper { 
+        display: flex; 
+        gap: 15px; 
+        padding: 15px 15px; 
+        overflow-x: auto; 
+        -webkit-overflow-scrolling: touch; 
+    }
+    .filter-btn { 
+        padding: 8px 16px; 
+        border-radius: 5px; 
+        border: 1px solid #ccc; 
+        background: #fff; 
+        cursor: pointer; 
+        white-space: nowrap; 
+        font-family: inter; 
+        font-size: 14px; 
+        transition: 0.2s;
+    }
+    .filter-btn.active { background: #3300FF; color: #fff; border-color: #3300FF; }
+
+    .map-card { 
+        width: 260px; 
+        font-family: sans-serif; 
+        padding: 0;
+        overflow: hidden !important;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 15px !important;
+    }
+
+    .maplibregl-popup-content {
+        padding: 0 !important;
+        border-radius: 15px !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+        overflow: visible !important;
+    }
+
+    .maplibregl-popup-close-button {
+        background: #fff !important;
+        border-radius: 4px !important;
+        width: 24px !important;
+        height: 24px !important;
+        margin: 8px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border: none !important;
+        font-size: 18px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333 !important;
+    }
+
+    .maplibregl-popup-close-button:hover {
+        background: #f0f0f0 !important;
+    }
+
+    .maplibregl-popup {
+        max-width: 300px !important;
+        max-height: 90%; 
+        display: flex;
+    }
+
+    .reviews-scroll-container::-webkit-scrollbar {
+        width: 3px;
+    }
+    .reviews-scroll-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .reviews-scroll-container::-webkit-scrollbar-thumb {
+        background: #3300FF;
+        border-radius: 10px;
+    }
+</style>
+<div style="margin: 10px 15px 0 15px;">
+    <input
+        id="search-input"
+        type="text"
+        placeholder="Найти место по названию"
+        style="width:100%; padding:8px 12px; border-radius:5px; border:1px solid #ccc; font-size:14px; box-sizing:border-box; font-family:inter;"
+        oninput="handleSearch(this.value)"
+    />
+</div>
+
+<div class="filters-wrapper" id="cat-nav">
+    <button class="filter-btn active" onclick="handleFilter(null, this)">Все места</button>
+</div>
+<div id="map"></div>
+
+<script>
+const CONFIG = {
+    STYLE: 'https://api.maptiler.com/maps/019d2512-2afc-7aa0-a8e2-35db50c65a48/style.json?key=96HpVHycBgd1fT8naY3V',
+    SHEET_CATEGORIES: 'https://docs.google.com/spreadsheets/d/1Y6VXR8J8-ZiHjk1frCEVPcoSUdUGtnuEee1bC8huwE8/export?format=csv&gid=0',
+    SHEET_LOCATIONS:  'https://docs.google.com/spreadsheets/d/1Y6VXR8J8-ZiHjk1frCEVPcoSUdUGtnuEee1bC8huwE8/export?format=csv&gid=1185264131',
+    SHEET_FEEDBACK:   'https://docs.google.com/spreadsheets/d/1Y6VXR8J8-ZiHjk1frCEVPcoSUdUGtnuEee1bC8huwE8/export?format=csv&gid=89812614'
+};
+let currentCategoryId = null;
+let currentSearchQuery = '';
+
+window.handleFilter = (categoryId, btn) => {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  currentCategoryId = categoryId;
+  applyFilters();
+};
+
+window.handleSearch = (query) => {
+  currentSearchQuery = (query || '').toLowerCase().trim();
+  applyFilters();
+};
+
+function driveShareToDirectUrl(shareUrl) {
+  if (!shareUrl) return shareUrl;
+
+  try {
+    const url = new URL(shareUrl);
+
+    // Если это уже прямой uc?id=... — ничего не делаем
+    if (
+      url.hostname === 'drive.google.com' &&
+      url.pathname === '/uc' &&
+      url.searchParams.get('id')
+    ) {
+      return shareUrl;
+    }
+
+    // Пытаемся достать FILE_ID из /file/d/FILE_ID/...
+    // ВАЖНО: без лишних обратных слэшей!
+    const match = url.pathname.match(/\/file\/d\/([^/]+)\//);
+    if (!match) {
+      console.warn('Не похоже на ссылку Google Drive /file/d/.../', shareUrl);
+      return shareUrl;
+    }
+
+    const fileId = match[1];
+    return `https://drive.google.com/uc?id=${fileId}`;
+  } catch (e) {
+    console.warn('Не смог распарсить ссылку Google Drive', shareUrl, e);
+    return shareUrl;
+  }
+}
+
+window.currentImageIndexByLocation = {};
+
+window.changeImage = function(event, locationId, delta) {
+  console.log('changeImage call', { locationId, delta });
+
+  event.stopPropagation();
+
+  const loc = locations.find(l => l.id === locationId);
+  if (!loc || !loc.images || loc.images.length === 0) {
+    console.warn('Нет картинок для локации', locationId, loc);
+    return;
+  }
+
+  const images = loc.images;
+  const total = images.length;
+
+  let current = window.currentImageIndexByLocation[locationId] ?? 0;
+  current = (current + delta + total) % total;
+  window.currentImageIndexByLocation[locationId] = current;
+
+  const button = event.currentTarget || event.target;
+  const slider = button.closest
+    ? button.closest('.map-card-slider')
+    : button.parentNode;
+
+  if (!slider) {
+    console.warn('Не нашёл .map-card-slider для', locationId);
+    return;
+  }
+
+  const img = slider.querySelector('.map-card-image');
+  if (!img) {
+    console.warn('Не нашёл .map-card-image внутри slider');
+    return;
+  }
+
+  const rawUrl = images[current];
+  const directUrl = driveShareToDirectUrl(rawUrl);
+
+  console.log('set image', { rawUrl, directUrl });
+  img.src = directUrl;
+};
+
+function applyFilters() {
+  let filtered = locations;
+
+  if (currentCategoryId) {
+    filtered = filtered.filter(p => p.category_id == currentCategoryId);
+  }
+
+  if (currentSearchQuery) {
+    filtered = filtered.filter(p =>
+      (p.title || '').toLowerCase().includes(currentSearchQuery)
+    );
+  }
+
+  drawMarkers(filtered);
+}
+
+let map;
+let categories = [];
+let locations = [];
+let feedbacks = [];
+let markers = [];
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = splitCSVLine(lines[0]).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const cols = splitCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => {
+      let val = cols[i] ?? '';
+      if (val.startsWith('"') && val.endsWith('"')) {
+        val = val.slice(1, -1);
+      }
+      obj[h] = val.trim();
+    });
+    return obj;
+  });
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+async function loadAllData() {
+  const [catsRes, locsRes, feedRes] = await Promise.all([
+    fetch(CONFIG.SHEET_CATEGORIES),
+    fetch(CONFIG.SHEET_LOCATIONS),
+    fetch(CONFIG.SHEET_FEEDBACK)
+  ]);
+
+  const [catsText, locsText, feedText] = await Promise.all([
+    catsRes.text(),
+    locsRes.text(),
+    feedRes.text()
+  ]);
+
+  const catsRows = parseCSV(catsText);
+  const locsRows = parseCSV(locsText);
+  const feedRows = parseCSV(feedText);
+
+  categories = catsRows.map(r => ({
+    id: r.id,
+    name: r.name,
+    color: r.color || '#3300FF'
+  }));
+
+  feedbacks = feedRows.map(r => ({
+    id: Number(r.id),
+    location_id: Number(r.location_id),
+    rating: r.rating ? Number(r.rating) : null,
+    comment: r.comment || ''
+  }));
+
+  locations = locsRows
+    .map(r => {
+      const lat = parseFloat((r.lat || '').replace(',', '.'));
+      const lng = parseFloat((r.lng || '').replace(',', '.'));
+
+      const images = (r.image_url || '')
+        .split('|')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      return {
+        id: Number((r.id || '').trim()),
+        title: r.title,
+        description: r.description,
+        lat,
+        lng,
+        category_id: Number((r.category_id || '').trim()),
+        image_url: (r.image_url || '').trim(),
+        images
+      };
+    })
+    .filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+
+  buildCategoryNav();
+  drawMarkers(locations);
+}
+
+function buildCategoryNav() {
+  const nav = document.getElementById('cat-nav');
+  nav.innerHTML = '';
+
+  const btnAll = document.createElement('button');
+  btnAll.className = 'filter-btn active';
+  btnAll.innerText = 'Все места';
+  btnAll.onclick = () => window.handleFilter(null, btnAll);
+  nav.appendChild(btnAll);
+
+  categories.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.innerText = c.name;
+    btn.onclick = () => window.handleFilter(c.id, btn);
+    nav.appendChild(btn);
+  });
+}
+
+function drawMarkers(data) {
+  markers.forEach(m => m.remove());
+  markers = [];
+
+  data.forEach(p => {
+    const cat = categories.find(c => c.id == p.category_id);
+    const pointFeedbacks = feedbacks.filter(f => f.location_id === p.id);
+
+    const avgRating = pointFeedbacks.length
+      ? (pointFeedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / pointFeedbacks.length).toFixed(1)
+      : '—';
+
+    const hasImages = p.images && p.images.length > 0;
+    const firstImageRaw = hasImages ? p.images[0] : '';
+    const firstImage = driveShareToDirectUrl(firstImageRaw);
+
+    const popupHtml = `
+      <div class="map-card" style="font-family: inter; color: #111; box-sizing: border-box; width: 260px;">
+        ${hasImages ? `
+          <div class="map-card-slider" 
+               data-location-id="${p.id}"
+               style="width:100%; overflow:hidden; border-radius:12px 12px 0 0; background:#eee;">
+            <img src="${firstImage}"
+                 class="map-card-image"
+                 style="width:100%; height:150px; object-fit:cover; display:block;">
+    
+            ${p.images.length > 1 ? `
+              <div class="slider-controls" 
+                   style="display:flex; justify-content:center; align-items:center; gap:16px; padding:6px 0 4px 0;">
+                <button type="button"
+                        class="slider-btn slider-btn-prev"
+                        onclick="window.changeImage(event, ${p.id}, -1)"
+                        style="background:none; border:none; cursor:pointer; font-size:18px; font-family: inter;line-height:1; padding:4px 6px; color:#FFFFFF;">
+                  ‹
+                </button>
+                <button type="button"
+                        class="slider-btn slider-btn-next"
+                        onclick="window.changeImage(event, ${p.id}, 1)"
+                        style="background:none; border:none; cursor:pointer; font-size:18px; font-family: inter;line-height:1; padding:4px 6px; color:#FFFFFF;">
+                  ›
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+        
+        <div style="padding: 12px 12px 15px 12px; box-sizing: border-box;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <h3 style="margin:0; font-size:16px; font-weight:700; font-family: inter;line-height:1.2; padding-right:10px;">${p.title}</h3>
+            <div style="background:#3300FF; color:#fff; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:13px; white-space:nowrap;">★ ${avgRating}</div>
+          </div>
+    
+          <p style="margin:0 0 12px 0; font-size:13px; color:#444; line-height:1.4;">${p.description || ''}</p>
+    
+          ${pointFeedbacks.length ? `
+            <div style="margin-bottom:12px; border-top: 1px solid #eee; padding-top:10px;">
+              <p style="font-size:10px; font-family: inter;font-weight:bold; color:#999; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Отзывы</p>
+              <div class="reviews-scroll-container" style="max-height: 100px; overflow-y: auto; padding-right: 4px;">
+                ${pointFeedbacks
+                  .sort((a, b) => b.id - a.id)
+                  .map(f => `
+                    <div style="background:#f8f8f8; padding:6px 10px; border-radius:8px; margin-bottom:6px; font-size:12px;">
+                      ${f.rating ? `<div style="color:#3300FF; font-family: inter;font-size:10px; margin-bottom:2px;">${'★'.repeat(f.rating)}</div>` : ''}
+                      <div style="color:#333; line-height:1.3;">${f.comment || 'Оценка без текста'}</div>
+                    </div>
+                  `).join('')}
+              </div>
+            </div>
+          ` : ''}
+    
+            <div style="margin-top:8px;">
+              <div style="padding:0 2px; box-sizing:border-box;">
+                <button
+                  type="button"
+                  onclick="window.openFeedbackPopup(${p.id})"
+                  style="
+                    width:100%;
+                    padding:10px;
+                    border-radius:10px;
+                    border:1px solid #3300FF;
+                    background:#fff;
+                    color:#3300FF;
+                    font-weight:bold;
+                    font-family: inter;
+                    font-size:13px;
+                    cursor:pointer;
+                    box-sizing:border-box;
+                    display:block;
+                  ">
+                  Добавить отзыв
+                </button>
+              </div>
+            </div>
+        </div>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({
+      offset: 25,
+      maxWidth: '300px',
+      focusAfterOpen: false,
+      anchor: 'bottom',
+      closeButton: false,   // не показывать крестик
+      closeOnClick: true    // закрывать по клику на карте (можно опустить, это дефолт)
+    }).setHTML(popupHtml);
+
+    const m = new maplibregl.Marker({ color: (cat && cat.color) || '#3300FF' })
+      .setLngLat([p.lng, p.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    markers.push(m);
+  });
+}
+
+window.handleFilter = (categoryId, btn) => {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const filtered = categoryId
+    ? locations.filter(p => p.category_id == categoryId)
+    : locations;
+
+  drawMarkers(filtered);
+};
+
+function initMap() {
+  if (typeof maplibregl === 'undefined') return;
+
+  map = new maplibregl.Map({
+    container: 'map',
+    style: CONFIG.STYLE,
+    center: [30.3158, 59.9390],
+    zoom: 11,
+    maxBounds: [[29.4, 59.7], [30.7, 60.2]]
+  });
+
+  map.on('load', () => {
+    loadAllData().catch(console.error);
+  });
+}
+
+const FEEDBACK_POPUP_HOOK = '#popup:map';
+
+window.currentFeedbackLocationId = null;
+
+window.openFeedbackPopup = function(locationId) {
+  window.currentFeedbackLocationId = locationId;
+
+  const trigger = document.querySelector(
+    'a[href="' + FEEDBACK_POPUP_HOOK + '"], ' +
+    '[data-tooltip-hook="' + FEEDBACK_POPUP_HOOK.replace('#popup:', '') + '"]'
+  );
+
+  if (trigger) {
+    trigger.click();
+  } else {
+    window.location.hash = FEEDBACK_POPUP_HOOK;
+  }
+
+  setTimeout(() => {
+    const popup = document.querySelector('.t-popup.t-popup_show, .t-modal.t-modal_show, [data-tooltip-hook-block]');
+    if (!popup) return;
+
+    const hiddenInput = popup.querySelector('input[name="location_id"]');
+    if (!hiddenInput) return;
+
+    hiddenInput.value = String(locationId);
+  }, 400);
+};
+document.addEventListener('DOMContentLoaded', initMap);
+</script>

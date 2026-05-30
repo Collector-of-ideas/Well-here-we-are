@@ -1,0 +1,424 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Unbounded:wght@900&display=swap');
+
+:root {
+    --blue: #3300FF !important;
+    --black: #000000 !important;
+    --white: #ffffff !important;
+}
+
+#allrecords {
+    margin-left: 310px;
+}
+
+.nav-wrapper,
+.nav-wrapper * {
+    box-sizing: border-box;
+}
+
+.nav-wrapper a {
+    color: var(--black) !important;
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.nav-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 310px;
+    height: 100vh;
+    background: #fff;
+    z-index: 9999;
+    padding: 40px 20px;
+    border-right: 1px dashed var(--blue);
+    overflow-y: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.nav-wrapper::-webkit-scrollbar { display: none; }
+
+.nav-grid-item {
+    display: grid !important;
+    grid-template-columns: 35px 1fr 35px !important;
+    align-items: center !important;
+    width: 100% !important;
+    cursor: pointer;
+    min-height: 24px;
+}
+
+.map-icon-img {
+    display: none;
+    height: auto;
+    object-fit: contain;
+}
+
+.header-style {
+    border: 1.5px solid var(--blue) !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+    height: 60px !important;
+    padding: 0 10px 0 20px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 35px !important;
+    align-items: center !important;
+    transition: background 0.3s, color 0.3s;
+}
+
+.header-style.outline {
+    background: var(--white) !important;
+    color: var(--blue) !important;
+}
+
+.header-style.filled {
+    background: var(--blue) !important;
+    color: var(--white) !important;
+}
+
+a.map-link.header-style {
+    border: 1.5px solid var(--blue) !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+    height: 60px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 20px !important;
+    color: var(--blue) !important;
+}
+
+a.map-link.header-style .arrow-cell,
+a.map-link.header-style .nav-arrow {
+    display: none !important;
+}
+
+a.map-link.header-style .text-cell {
+    padding-left: 0 !important;
+    width: 100% !important;
+}
+
+.sub-item .text-cell {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 500 !important;
+    color: var(--black) !important;
+    line-height: 1.3 !important;
+}
+
+.sub-item.current .text-cell {
+    color: var(--blue) !important;
+    font-weight: 600 !important;
+}
+
+.dot {
+    width: 10px !important;
+    height: 10px !important;
+    background: var(--blue) !important;
+    border-radius: 50% !important;
+    display: block !important;
+    opacity: 0;
+    margin: 0 auto;
+}
+
+.current .dot { opacity: 1 !important; }
+
+.text-cell {
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
+}
+
+.text-cell.italic {
+    font-family: "Garamond", serif !important;
+    font-style: italic !important;
+    font-size: 30px !important;
+    line-height: 1 !important;
+}
+
+.nav-arrow {
+    width: 10px;
+    height: 10px;
+    border-right: 2.5px solid currentColor;
+    border-bottom: 2.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: 0.3s;
+    display: block;
+    margin-top: -5px;
+}
+
+.active .nav-arrow {
+    transform: rotate(-135deg);
+    margin-top: 5px;
+}
+
+.nav-content {
+    display: none;
+    padding: 10px 0 20px 0;
+}
+
+.active .nav-content { display: block !important; }
+
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+}
+
+.menu-toggle div {
+    width: 30px;
+    height: 3px;
+    background-color: var(--blue);
+    margin: 6px 0;
+    transition: 0.4s;
+}
+
+.nav-logo.desktop-header {
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+    margin-bottom: 35px;
+}
+
+.logo-text-container {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.5;
+}
+
+.logo-nu.italic {
+    font-family: 'Garamond', serif !important;
+    font-style: italic !important;
+    font-size: 30px !important;
+    color: var(--blue) !important;
+    margin-bottom: -5px;
+}
+
+.logo-priekhali {
+    font-family: 'Unbounded', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 20px !important;
+    text-transform: uppercase !important;
+    color: var(--blue) !important;
+}
+
+.nav-logo, .nav-logo:hover {
+    border-bottom: none !important;
+}
+
+@media screen and (min-width: 961px) {
+    .nav-logo.desktop-header .map-icon-img {
+        display: block !important;
+        width: 32px;
+        margin-right: 12px;
+    }
+}
+
+@media screen and (max-width: 960px) {
+  /* Контент больше не сдвигается вбок */
+  #allrecords {
+    margin-left: 0 !important;
+  }
+
+  /* Десктопный логотип скрываем */
+  .nav-logo.desktop-header {
+    display: none !important;
+  }
+
+  /* Закрытое меню: в потоке, вытесняет контент вниз */
+  .nav-wrapper {
+    position: relative !important;      /* участвует в потоке */
+    width: 100% !important;
+    padding: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px dashed var(--blue);
+    height: auto !important;
+    overflow: hidden !important;
+    z-index: 10;
+  }
+
+  /* Верхняя полоска: иконка + гамбургер */
+  .mobile-top-bar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    height: 60px !important;
+    padding: 0 20px !important;
+  }
+
+  /* В мобильной шапке показываем только иконку, без текста */
+  .nav-logo .logo-text-container {
+    display: none !important;
+  }
+
+  .map-icon-img.mobile-map-icon {
+    display: block !important;
+    width: 32px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Кнопка меню (гамбургер) */
+  .menu-toggle {
+    display: flex !important;
+    flex-direction: column;
+    cursor: pointer;
+  }
+
+  .menu-toggle div {
+    width: 24px;
+    height: 3px !important;
+    border-radius: 4px;
+    background-color: var(--blue);
+    margin: 2px 0;
+    transition: 0s;
+  }
+
+  /* Контент меню (Истории / Альманах / Карта) по умолчанию скрыт */
+  .nav-container {
+    display: none;
+    padding: 20px;
+  }
+
+  /* При открытом меню показываем пункты */
+  .nav-wrapper.is-open .nav-container {
+    display: block;
+  }
+
+  /* Открытое меню: оверлей под верхней шкалой */
+  .nav-wrapper.is-open {
+    position: fixed !important;                         /* высота верхней шкалы */
+    left: 0;
+    width: 100% !important;
+    height: calc(100vh - 60px) !important;
+    overflow-y: auto !important;
+    background: #fff;
+    z-index: 9999 !important;
+  }
+}
+</style>
+
+<div class="nav-wrapper" id="customMenu">
+    <a href="/" class="nav-logo desktop-header" style="padding-left: 10px;">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAA7CAYAAADvlQMcAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAABM5JREFUeAHVWs1vG0UUf2/sRAgoXXNB/Yo2F3qKusk/gPMHAO0RLkkvgMSBICFxjHPh2iBx4ObmAsekAs5J/gGyFSe4xDQOHJDqDa2qSrH39b39imvPfqXpeP2TNtn58PjNzJvf/N6MESYEx+o6SuHHRNSUJD9WVOQiouv7gweuN7ej+yyCYTjWoaVwtk1At/NrU4eo3nK9K1vDuUaNdqx/bcT+Ln+tXeZzPPKt3x9f20jSYAjnNTgGEXztetc35V2BISAO2uc1OPw83JN1IO9GjHasR+K/TV3Zp1+8Db+67wFPP+wfXoXWDw24MlfTtiOGB//BAJYax9u6hff5t5f4eWes/p9/nMJnH/0HT05orIzotGFkpNng5mjepcsKPvzkLW39mwszXPYm6FG7/dqNZoqz4YyDE9xcqMPVFDcQvL8wqy9Q6BgY6bqty/1fM/XDeHri6wt8ddmA0f2OLvcv9tsnGYaLX2uh/BMTPu2lFax/2dPm//Lzs+DRwseOEfZYtLq7zFNNXZn49TffWYGP//NoALu/PYeffnya2hZrlWUjRjvWUYu34nV4ZVDnoHdj3tCO2N+ECwARfi//jRjtevMekb8FrwTqMEcHUtWY9gAYrEHGoswDIWyxRO3Iu2Fp2l2L9UM5hL4cpwyOtLgJS0uCPSgJDgSWh9NGjQ4MgNpdKOEmhLQRu0UM4+GWQKQqotrOq8dsseN61+6M5ucaLTEdwBv89O2seq53Yy+9DRHvJG24wiRhXh53S3zYX4zrFzLasY7XEUlWvAUFcNC7ntrWYuPoMIpaXNbDy/mGBwHt8qhbxMjwaR+LGlwCfGwwm7AHz04LcJS/sw0W1IOWOOgMGxmuiPG7xyI+nCLC1IayQKTccHMItIPN7rLKTHJf0geP51Z5xD0e8a+KGJxApm+x0aWld7v3Qh8OfTnujAkIhxf9PpReM+G34wyi2nyhnk4Qih13JU7oOLGKUMwfTpLycQemAMIeCUPw4nBhCiBGJ+QdL8KqQ4zunCVrBU4yJw/FvPkgTsjuNA2jraJQKHIRtAFmP4BpgBA7by493pmaMAVIRI64xaiiiiKNFRZO+75PewAzbhV4PFOappxXSMf4XoQehh1BL0uWvg5kSNNDC3GmBwUhhyimjK+nFYirsOENpsEm902eW4gv3UKNAMfEetTx7XBWaqypBw+HA4HzonS4FUYhvi1ai8nnFo8x36WAzUFAY7zuUZNpdFfTjIssfX1SIhv2y66TC4kRdYs4zC98ZMARjb+Rdm84ijpcANKnu7bD4VVnZFYcTUUpt6EgJhSNy35Q4074HJWH7DQNOj6BRCu6TS1LTkxkpLMgnVCqv8ZnHitMo3d0NGr8hCkPCIM2G8xBrlCrWtHVqZzRHPmf3YGj/tK/cu4hEPEG0SamW6CVG+kABENh3/hxXDWNzkE1jcbs47jKGR2dMg3tmv2xE4LqUZ46bcXvfJ+7p5MI1XMPwrMYlWr3YVoQHkYebaaVF+LpJeu4PZz2If3nZ8FP1yDY0dLBC403EZvf7OiK4i6UQK40lVNVPphcfSmT8G/+m6J9yeI7v1UoCN71HCiJTJ8Of+FFF3CnnQUqfTiUO9I8fRvjuZhxUNnnKGSmwHTLzUC9cx4N/QIsb/Tdzve+YwAAAABJRU5ErkJggg==" class="map-icon-img" alt="Logo">
+        <div class="logo-text-container">
+            <span class="logo-nu italic">Ну,</span>
+            <span class="logo-priekhali">ПРИЕХАЛИ</span>
+        </div>
+    </a>
+
+    <div class="mobile-top-bar">
+        <a href="/" class="nav-logo">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAA7CAYAAADvlQMcAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAABM5JREFUeAHVWs1vG0UUf2/sRAgoXXNB/Yo2F3qKusk/gPMHAO0RLkkvgMSBICFxjHPh2iBx4ObmAsekAs5J/gGyFSe4xDQOHJDqDa2qSrH39b39imvPfqXpeP2TNtn58PjNzJvf/N6MESYEx+o6SuHHRNSUJD9WVOQiouv7gweuN7ej+yyCYTjWoaVwtk1At/NrU4eo3nK9K1vDuUaNdqx/bcT+Ln+tXeZzPPKt3x9f20jSYAjnNTgGEXztetc35V2BISAO2uc1OPw83JN1IO9GjHasR+K/TV3Zp1+8Db+67wFPP+wfXoXWDw24MlfTtiOGB//BAJYax9u6hff5t5f4eWes/p9/nMJnH/0HT05orIzotGFkpNng5mjepcsKPvzkLW39mwszXPYm6FG7/dqNZoqz4YyDE9xcqMPVFDcQvL8wqy9Q6BgY6bqty/1fM/XDeHri6wt8ddmA0f2OLvcv9tsnGYaLX2uh/BMTPu2lFax/2dPm//Lzs+DRwseOEfZYtLq7zFNNXZn49TffWYGP//NoALu/PYeffnya2hZrlWUjRjvWUYu34nV4ZVDnoHdj3tCO2N+ECwARfi//jRjtevMekb8FrwTqMEcHUtWY9gAYrEHGoswDIWyxRO3Iu2Fp2l2L9UM5hL4cpwyOtLgJS0uCPSgJDgSWh9NGjQ4MgNpdKOEmhLQRu0UM4+GWQKQqotrOq8dsseN61+6M5ucaLTEdwBv89O2seq53Yy+9DRHvJG24wiRhXh53S3zYX4zrFzLasY7XEUlWvAUFcNC7ntrWYuPoMIpaXNbDy/mGBwHt8qhbxMjwaR+LGlwCfGwwm7AHz04LcJS/sw0W1IOWOOgMGxmuiPG7xyI+nCLC1IayQKTccHMItIPN7rLKTHJf0geP51Z5xD0e8a+KGJxApm+x0aWld7v3Qh8OfTnujAkIhxf9PpReM+G34wyi2nyhnk4Qih13JU7oOLGKUMwfTpLycQemAMIeCUPw4nBhCiBGJ+QdL8KqQ4zunCVrBU4yJw/FvPkgTsjuNA2jraJQKHIRtAFmP4BpgBA7by493pmaMAVIRI64xaiiiiKNFRZO+75PewAzbhV4PFOappxXSMf4XoQehh1BL0uWvg5kSNNDC3GmBwUhhyimjK+nFYirsOENpsEm902eW4gv3UKNAMfEetTx7XBWaqypBw+HA4HzonS4FUYhvi1ai8nnFo8x36WAzUFAY7zuUZNpdFfTjIssfX1SIhv2y66TC4kRdYs4zC98ZMARjb+Rdm84ijpcANKnu7bD4VVnZFYcTUUpt6EgJhSNy35Q4074HJWH7DQNOj6BRCu6TS1LTkxkpLMgnVCqv8ZnHitMo3d0NGr8hCkPCIM2G8xBrlCrWtHVqZzRHPmf3YGj/tK/cu4hEPEG0SamW6CVG+kABENh3/hxXDWNzkE1jcbs47jKGR2dMg3tmv2xE4LqUZ46bcXvfJ+7p5MI1XMPwrMYlWr3YVoQHkYebaaVF+LpJeu4PZz2If3nZ8FP1yDY0dLBC403EZvf7OiK4i6UQK40lVNVPphcfSmT8G/+m6J9yeI7v1UoCN71HCiJTJ8Of+FFF3CnnQUqfTiUO9I8fRvjuZhxUNnnKGSmwHTLzUC9cx4N/QIsb/Tdzve+YwAAAABJRU5ErkJggg==" class="map-icon-img mobile-map-icon" alt="Logo">
+        </a>
+        <div class="menu-toggle" onclick="toggleHamburger()">
+            <div class="bar1"></div>
+            <div class="bar2"></div>
+            <div class="bar3"></div>
+        </div>
+    </div>
+
+    <div class="nav-container">
+        <div class="nav-section" data-section="stories">
+            <div class="nav-grid-item header-style outline" onclick="toggleSection('stories')">
+                <div class="text-cell italic">Истории</div>
+                <div class="arrow-cell"><span class="nav-arrow"></span></div>
+            </div>
+            <div class="nav-content">
+                <a href="/page121569176.html" class="nav-grid-item sub-item">
+                    <div class="dot-cell"><span class="dot"></span></div>
+                    <div class="text-cell">Академическая адаптация</div>
+                </a>
+                <a href="/page140890396.html" class="nav-grid-item sub-item">
+                    <div class="dot-cell"><span class="dot"></span></div>
+                    <div class="text-cell">Социальная адаптация</div>
+                </a>
+                <a href="/page140933466.html" class="nav-grid-item sub-item" data-story="emotion">
+                    <div class="dot-cell"><span class="dot"></span></div>
+                    <div class="text-cell">Эмоциональная адаптация</div>
+                </a>
+                <a href="/page145419356.html" class="nav-grid-item sub-item" data-story="city">
+                	<div class="dot-cell"><span class="dot"></span></div>
+                        <div class="text-cell">Городская адаптация</div>
+                </a>
+                <a href="/page145473156" class="nav-grid-item sub-item" data-story="fin">
+                	<div class="dot-cell"><span class="dot"></span></div>
+                        <div class="text-cell">Финансовая адаптация</div>
+                </a>
+                <a href="/page145476206.html" class="nav-grid-item sub-item" data-story="life">
+                	<div class="dot-cell"><span class="dot"></span></div>
+                        <div class="text-cell">Бытовая адаптация</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="nav-section" data-section="almanac">
+            <div class="nav-grid-item header-style outline" onclick="toggleSection('almanac')">
+                <div class="text-cell italic">Альманах</div>
+                <div class="arrow-cell"><span class="nav-arrow"></span></div>
+            </div>
+            <div class="nav-content">
+                <a href="/page130296376.html#rec2091141371" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Важные ссылки</div></a>
+                <a href="/page130296376.html#rec2091259911" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Сервисы ИТМО</div></a>
+                <a href="/page130296376.html#rec2091770751" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Общежития</div></a>
+                <a href="/page130296376.html#rec2200253461" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Основные корпуса</div></a>
+                <a href="/page130296376.html#rec2091845191" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Расписание</div></a>
+                <a href="/page130296376.html#rec2092965771" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">БАРС</div></a>
+                <a href="/page130296376.html#rec2092949071" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Студенческий и зачётка</div></a>
+                <a href="/page130296376.html#rec2092954541" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Кампусная карта</div></a>
+                <a href="/page130296376.html#rec2091861651" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Коворкинги</div></a>
+                <a href="/page130296376.html#rec2091877701" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">БСК</div></a>
+                <a href="/page130296376.html#rec2144523641" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Библиотека</div></a>
+                <a href="/page130296376.html#rec2092959501" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Воинский учёт</div></a>
+                <a href="/page130296376.html#rec2330849891" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Медосмотр</div></a>
+                <a href="/page130296376.html#rec2330855631" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Справки</div></a>
+                <a href="/page130296376.html#rec2330860331" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Стипендия</div></a>
+                <a href="/page130296376.html#rec2330875251" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Сессия</div></a>
+                <a href="/page130296376.html#rec2330842851" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Английский язык</div></a>
+                <a href="/page130296376.html#rec2330879421" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Перевод на бюджет</div></a>
+                <a href="/page130296376.html#rec2330884901" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Плюшки</div></a>
+                <a href="/page130296376.html#rec2330889931" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Выборность</div></a>
+                <a href="/page130296376.html#rec2330894551" class="nav-grid-item sub-item"><div class="dot-cell"><span class="dot"></span></div><div class="text-cell">Чек-лист приложений</div></a>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <a href="/page138451216.html" class="nav-grid-item header-style map-link">
+                <div class="text-cell italic">Карта</div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSection(name) {
+    const sections = document.querySelectorAll('.nav-section');
+    sections.forEach(s => {
+        const header = s.querySelector('.header-style');
+        if (s.dataset.section === name) {
+            const isOpen = s.classList.contains('active');
+            s.classList.toggle('active', !isOpen);
+            header.classList.toggle('filled', !isOpen);
+            header.classList.toggle('outline', isOpen);
+        }
+    });
+}
+
+function toggleHamburger() {
+    const menu = document.getElementById('customMenu');
+    menu.classList.toggle('is-open');
+}
+
+function syncUI() {
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.nav-grid-item').forEach(el => el.classList.remove('current'));
+
+    if (currentPath.includes('page121569176.html')) {
+        const storyLink = document.querySelector('[href="/page121569176.html"]');
+        if (storyLink) storyLink.classList.add('current');
+    } else if (currentPath.includes('page126749676.html')) {
+        const mapLink = document.querySelector('.map-link');
+        if (mapLink) mapLink.classList.add('current');
+    }
+}
+
+window.addEventListener('load', syncUI);
+</script>

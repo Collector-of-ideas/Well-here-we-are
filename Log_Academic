@@ -1,0 +1,50 @@
+<script>
+(function() {
+    const STORY_FRAMES = [
+        'rec2205692671',
+        'rec2215952801',
+        'rec2215954661',
+        'rec2215959571',
+        'rec2215965691'
+    ];
+
+    function showStoryFrame(frameId) {
+        console.log('Переключение на:', frameId);
+        
+        STORY_FRAMES.forEach(id => {
+            const frame = document.getElementById(id);
+            if (frame) {
+                if (id === frameId) {
+                    frame.style.display = 'block';
+                    console.log('✅ Показан:', id);
+                } else {
+                    frame.style.display = 'none';
+                    console.log('❌ Скрыт:', id);
+                }
+            }
+        });
+        
+        window.location.hash = frameId;
+        window.scrollTo(0, 0);
+    }
+
+    // Делаем функцию глобальной, чтобы работал onclick
+    window.showStoryFrame = showStoryFrame;
+
+    window.addEventListener('load', function() {
+        const hash = window.location.hash.replace('#', '');
+        const targetFrame = STORY_FRAMES.includes(hash) ? hash : 'rec2205692671';
+        
+        setTimeout(function() {
+            showStoryFrame(targetFrame);
+        }, 300);
+    });
+
+    window.addEventListener('hashchange', function() {
+        const hash = window.location.hash.replace('#', '');
+        if (STORY_FRAMES.includes(hash)) {
+            showStoryFrame(hash);
+        }
+    });
+})();
+</script>

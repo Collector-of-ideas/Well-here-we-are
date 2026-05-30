@@ -1,2 +1,2 @@
 # Well-here-we-are
-Studing progect for ITMO's Students
+Educational project for ITMO students
